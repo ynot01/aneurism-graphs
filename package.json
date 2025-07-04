@@ -1,0 +1,29 @@
+{
+  "name": "aneurism-graphs",
+  "version": "1.0.0",
+  "description": "",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "",
+  "scripts": {
+    "lint": "npx tsc",
+    "dev": "npm run lint && npx esbuild ./src/*.ts --bundle --splitting --sourcemap --outdir=./site/ --chunk-names=[name]  --format=esm",
+    "clean": "npx del-cli ./site/*.js ./site/*.js.map",
+    "build": "npm run clean && npm run lint && npx esbuild ./src/*.ts --bundle --splitting --minify --outdir=./site/ --chunk-names=[name] --format=esm",
+    "start": "npm run build && http-server site",
+    "test": "npm run dev && http-server site"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.20",
+    "del-cli": "^6.0.0",
+    "esbuild": "0.25.5",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "date-fns": "^4.1.0",
+    "lodash": "^4.17.21"
+  }
+}
