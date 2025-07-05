@@ -14,7 +14,15 @@ function rand(min:number, max:number) {
   return Math.floor(Math.random() * (max - min) + min)
 }
 export const servers = new Map<string, ChartDataset[]>
+export const serverRots = new Map<string, number[]>
 
+serverRots.set(
+    'SIGNAL 23 6 KERNEL',
+    [
+        Date.now() - (5 * 60000),
+        Date.now() - (15 * 60000)
+    ]
+)
 servers.set(
     'SIGNAL 23 6 KERNEL',
     [

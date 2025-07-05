@@ -1,6 +1,6 @@
-import { Chart, ChartDataset, PluginOptionsByType, ChartType, Point } from 'chart.js/auto'
+import { Chart, ChartDataset, PluginOptionsByType, ChartType, Point, Plugin } from 'chart.js/auto'
 import 'chartjs-adapter-date-fns'
-import { servers, lastUpdated } from './data.ts'
+import { servers, serverRots, lastUpdated } from './data.ts'
 import lodash from 'lodash'
 
 // const lineChart = <HTMLCanvasElement | null> document.getElementById('lineChart')
@@ -19,13 +19,17 @@ for (const [key, value] of servers) {
     const chartContainer = document.createElement("div")
     chartContainer.classList.add("chart-container")
     chartContainer.style.cssText = "margin-bottom: 72px; position: relative; height:40vh; width:80vw;"
+
     const serverTitle = document.createElement("h3")
     serverTitle.textContent = key
     serverTitle.style.cssText = "text-align: center;"
     chartContainer.appendChild(serverTitle)
+
     const lineChart = document.createElement("canvas")
     chartContainer.appendChild(lineChart)
-    set_chart_data(lineChart, value)
+
+    set_chart_data(lineChart, value, serverRots.get(key) || [])
+    
     let ply = value[0]
     let playerTally: number = 0
     for (const datakey in ply.data) {
@@ -46,7 +50,27 @@ rotText.textContent = `${totalRot}`
 
 updatedText.textContent = `${Math.floor((Date.now() - lastUpdated) / 1000.0)} seconds ago`
 
-function set_chart_data(canvasElement: HTMLCanvasElement | null, data: ChartDataset[]) {
+const lineMarker: Plugin<ChartType> = {
+    id: 'rotmarker',
+    beforeDatasetsDraw: (chart, args, plugins) => {
+        const { ctx, chartArea: { top, bottom }, scales: { x } } = chart
+        const positions: number[] = plugins.positions
+        ctx.save()
+
+        for (const positionKey in positions) {
+            const position = positions[positionKey]
+            ctx.beginPath()
+            ctx.strokeStyle = 'brown'
+            ctx.lineWidth = 5
+            ctx.moveTo(x.getPixelForValue(position), top)
+            ctx.lineTo(x.getPixelForValue(position), bottom)
+            ctx.stroke()
+        }   
+    }
+}
+Chart.register(lineMarker)
+
+function set_chart_data(canvasElement: HTMLCanvasElement | null, data: ChartDataset[], rotPositions: number[]) {
     if (canvasElement == null) { 
         return
     }
@@ -54,19 +78,21 @@ function set_chart_data(canvasElement: HTMLCanvasElement | null, data: ChartData
     if (ctx == null) { 
         return
     }
-    const myPlugins = <PluginOptionsByType<ChartType>> {
+    const myPlugins = <PluginOptionsByType<ChartType>> <unknown> {
         tooltip: {
-            // enabled: false,
             mode: 'index',
             intersect: false
         },
         legend: {
             labels: { color: '#dddddd' }
-        }
+        },
+        rotmarker: {
+            positions: rotPositions,
+        },
     }
     totalPlayers += (<Point> data[0].data.at(-1)).y
     totalRot += (<Point> data[1].data.at(-1)).y
-    let chart = new Chart(ctx, {
+    new Chart(ctx, {
         type: 'line',
         data: {
             datasets: data
