@@ -1,4 +1,4 @@
-import { Chart, ChartDataset, PluginOptionsByType, ChartType, Point, Plugin } from 'chart.js/auto'
+import { Chart, ChartDataset, PluginOptionsByType, ChartType, TooltipCallbacks, Point, Plugin, TooltipItem, ChartTypeRegistry } from 'chart.js/auto'
 import 'chartjs-adapter-date-fns'
 import { servers, serverRots, lastUpdated } from './data.ts'
 import lodash from 'lodash'
@@ -39,7 +39,7 @@ for (const [key, value] of servers) {
     charts.set(chartContainer, playerTally)
 }
 
-const sortedMap: Map<HTMLDivElement, number> = new Map(lodash.sortBy(Array.from(charts), [(entry:any) => -entry[1]]));
+const sortedMap: Map<HTMLDivElement, number> = new Map(lodash.sortBy(Array.from(charts), [(entry:any) => -entry[1]]))
 
 for (const [key, _] of sortedMap) {
     document.body.appendChild(key)
@@ -78,10 +78,24 @@ function set_chart_data(canvasElement: HTMLCanvasElement | null, data: ChartData
     if (ctx == null) { 
         return
     }
+    const tooltipCallbacks = <TooltipCallbacks<ChartType>> {
+        footer: function(contexts) {
+            let footers: string[] = []
+            for (const context of contexts) {
+                if (rotPositions.includes(context.parsed.x)) {
+                    footers.push("Rotted, server reset")
+                    break
+                }
+            }
+            return footers
+        }
+    }
     const myPlugins = <PluginOptionsByType<ChartType>> <unknown> {
         tooltip: {
             mode: 'index',
-            intersect: false
+            intersect: false,
+            footerColor: 'red',
+            callbacks: tooltipCallbacks
         },
         legend: {
             labels: { color: '#dddddd' }
@@ -128,12 +142,12 @@ function set_chart_data(canvasElement: HTMLCanvasElement | null, data: ChartData
     })
 }
 
-setInterval(refreshTimer, 200);
+setInterval(refreshTimer, 200)
 function refreshTimer(): void {
     updatedText.textContent = `${Math.floor((Date.now() - lastUpdated) / 1000.0)} seconds ago`
     if (Math.floor((Date.now() - lastUpdated) / 1000.0) > 400) {
-        refreshText.style.display = 'inline';
+        refreshText.style.display = 'inline'
     } else {
-        refreshText.style.display = 'none';
+        refreshText.style.display = 'none'
     }
 }
